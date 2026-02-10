@@ -1,0 +1,26 @@
+{
+  "name": "skills",
+  "owner": {
+    "name": "akashi"
+  },
+  "metadata": {
+    "description": "Personal Claude Code skills collection",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "personal-skills",
+      "description": "Personal skills including autonomous refactoring and more",
+      "source": "./plugins/personal-skills",
+      "strict": true,
+      "skills": [
+        "./skills/refactor",
+        "./skills/write-intent-spec",
+        "./skills/write-execution-spec",
+        "./skills/review-execution-spec",
+        "./skills/implement-from-spec",
+        "./skills/review-code-spec"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "personal-skills",
+  "version": "0.1.0",
+  "author": {
+    "name": "akashi"
+  },
+  "description": "Personal Claude Code skills including autonomous Go/Java refactoring workflows.",
+  "license": "MIT"
+}
