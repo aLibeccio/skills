@@ -1,6 +1,6 @@
 ---
 name: review-execution-spec
-description: 防御性审查 Execution Spec 的“守门人”Skill：以拦截风险为第一目标，重点扫描 scope creep、并发/幂等/一致性、可用性与降级、可观测性、安全、发布/迁移/回滚与可验证性。输出仅包含问题清单（无表扬），按严重级别给出 Impact/Fix/Verification，并给出 PASS / PASS WITH CONDITIONS / BLOCK 结论。
+description: 防御性审查 Execution Spec 的"守门人"Skill：以拦截风险为第一目标，重点扫描 scope creep、并发/幂等/一致性、可用性与降级、可观测性、安全、发布/迁移/回滚与可验证性。输出仅包含问题清单（无表扬），按严重级别给出 Impact/Fix/Verification，并给出 PASS / PASS WITH CONDITIONS / BLOCK 结论。支持多轮评审：自动追踪前序问题修复状态，保留评审历史以供追溯。
 ---
 
 # Skill: review-execution-spec
@@ -9,9 +9,24 @@ description: 防御性审查 Execution Spec 的“守门人”Skill：以拦截�
 你是资深架构师与 Gatekeeper。你的目标不是“通过方案”，而是**拦截风险**：你必须假设 Execution Spec 存在未被发现的并发漏洞、数据一致性风险、迁移/回滚缺口或运维盲区。输出只列问题，不写夸奖。
 
 ## Inputs (Contract)
-- `execution_spec` (String, Required): 待评审的技术执行规范（Execution Spec）。
-- `intent_spec` (String, Optional): 原始 Intent Spec，用于比对 scope 漂移与约束继承。
+- `execution_spec` (String/Path, Required): 待评审的技术执行规范（Execution Spec）。支持直接内容或文件路径。
+- `intent_spec` (String/Path, Optional): 原始 Intent Spec，用于比对 scope 漂移与约束继承。
+- `previous_reviews` (String/Path, Optional): 前序轮次的评审记录。提供时，本轮评审将：
+  - 逐条检查前序 Must Fix / Should Fix 是否已被修复（标注 `RESOLVED` / `PARTIALLY RESOLVED` / `UNRESOLVED`）
+  - 识别是否引入了新问题（regression）
+  - 输出中保留前序评审作为历史记录（详见 Output Format）
 - `repo_context` (String, Optional): 现有代码库上下文（模块边界、测试命令、约束、已存在的幂等/并发方案等）。
+- `output_path` (Path, Optional): 评审结果输出文件路径。用于多轮评审时在原文件上保留历史并追加新一轮结果。
+
+## Input Preprocessing Rules (Mandatory)
+- 对 `execution_spec` / `intent_spec` / `previous_reviews`：
+  - 若输入是 Path，必须先读取文件内容，再进入评审流程。
+  - 若读取失败（文件不存在/无权限/编码不可读），必须 stop-the-line，输出缺口与修复建议，不得继续评审。
+  - 若输入是 String 内容，按原样进入评审流程。
+- 对 `output_path`：
+  - 若提供且文件存在，必须保留已有内容，在文件末尾追加本轮评审。
+  - 若提供且文件不存在，创建新文件写入本轮评审。
+  - 若未提供，则仅返回本轮评审文本，不要求文件落盘。
 
 ## Review Posture (Must Adopt)
 - **Presume Broken**：默认方案在边界/并发/故障场景下会出问题，直到 Spec 提供可验证证据。
@@ -80,11 +95,25 @@ Must Fix 定义：任何可能导致**数据丢失、资金/资产错误、安�
 
 # Output Format (Must Follow Exactly)
 
+> 输出文件规则：若用户指定了输出路径且该文件已包含前序评审，**必须保留前序评审内容**作为历史记录，在文件末尾追加本轮评审（以分隔线和轮次标题区分）。
+
+### Review Header
+- **评审轮次**: Round N（N = 前序轮次数 + 1；首次评审为 Round 1）
+- **评审日期**: YYYY-MM-DD
+- **Spec 版本**: 被评审的 Execution Spec 版本标识（如 v1 / v2 / commit hash / 文件修改时间）
+
 ### 1. Executive Summary
 - **评审结论**: [PASS / PASS WITH CONDITIONS / BLOCK]
-- **风险总览**: 1-2 句，只描述“最危险的 1-3 个风险”。
+- **风险总览**: 1-2 句，只描述"最危险的 1-3 个风险"。
 
-### 2. Review Items
+### 1.5 前序问题追踪（仅多轮评审时输出）
+> 逐条检查前序 Must Fix / Should Fix 的修复状态。
+
+| # | 前序问题 | 严重级别 | 状态 | 说明 |
+|---|---------|---------|------|------|
+| 1 | [Issue Title] | Must Fix / Should Fix | ✅ RESOLVED / ⚠️ PARTIALLY RESOLVED / ❌ UNRESOLVED | 简述修复情况或残留风险 |
+
+### 2. Review Items（本轮新发现）
 
 #### 🔴 Must Fix (Blockers)
 *直接导致数据丢失、资金/资产错误、安全漏洞或系统不可用的问题。*
@@ -109,7 +138,7 @@ Must Fix 定义：任何可能导致**数据丢失、资金/资产错误、安�
   - **Benefit**:
 
 ### 3. Missing Considerations
-列出 Execution Spec 中完全遗漏但必须补充的板块（以“板块标题 + 缺失理由 + 需要补充的最小内容”形式输出）：
+列出 Execution Spec 中完全遗漏但必须补充的板块（以"板块标题 + 缺失理由 + 需要补充的最小内容"形式输出）：
 - **[Missing Section]**: 缺失原因；最小补充内容清单。
 
 ---

@@ -1,6 +1,6 @@
 ---
 name: write-execution-spec
-description: 基于已评审通过的 Intent Spec，生成高精度 Execution Spec（技术执行规范）：明确架构/数据流、契约与状态变更、文件级步骤、TDD/验证矩阵、可观测性与安全、发布/迁移/回滚；消除实现歧义并确保可验证与可上线。
+description: 基于已评审通过的 Intent Spec，生成高精度 Execution Spec（技术执行规范）：明确架构/数据流、契约与状态变更、文件级步骤、TDD/验证矩阵、可观测性与安全、发布/迁移/回滚；消除实现歧义并确保可验证与可上线。支持修订模式：基于评审反馈逐条修复（Must Fix/Should Fix 必修，Nice to Have 默认忽略），输出带版本号与 Changelog 的修订版文档。
 ---
 
 # Execution Spec（技术执行规范）Skill
@@ -17,17 +17,40 @@ description: 基于已评审通过的 Intent Spec，生成高精度 Execution Sp
 - **工程最优但不越界**：允许提出更稳健的工程实践，但不得突破 Intent Spec 的 scope、约束与风险偏好。
 
 ## 触发条件（何时使用本 Skill）
-当用户提供“评审通过/已确认”的 Intent Spec，并希望：
+当用户提供"评审通过/已确认"的 Intent Spec，并希望：
 - 进入实现阶段（尤其是 coding agents 需要可执行计划）
 - 明确文件级改动清单、契约/状态机精确定义
 - 制定 TDD 测试矩阵、发布/迁移/回滚方案、可观测性与安全要求
+- **基于评审反馈修订已有 Execution Spec**（修订模式）
 则启用本 Skill。
 
 ## 输入契约（Contextual Anchors）
 - **Input**：经过评审的 Intent Spec（尽量完整原文）。
+- **Review Feedback（可选）**：`review-execution-spec` 产出的评审报告。提供时进入**修订模式**（见下文）。
 - **Audience**：资深开发人员 / 自动化编程代理（Coding Agents）。
-- **Focus**：解决“如何以最优工程实践完成目标”（How），但必须以 Intent Spec 的 What/Why/约束为边界。
+- **Focus**：解决"如何以最优工程实践完成目标"（How），但必须以 Intent Spec 的 What/Why/约束为边界。
 - **Language/Stack（可选）**：Go/Java/DB 类型/消息系统/缓存/部署方式。若缺失且影响关键设计，必须提问。
+
+## 修订模式（Revision Mode）
+当同时提供 Intent Spec 和 Review Feedback 时，自动进入修订模式：
+
+### 修订原则
+- **Must Fix / Should Fix 必须逐条处理**：每条必须在修订后的文档中体现修复（改动/补充/澄清）。
+- **Nice to Have 默认忽略**：除非用户明确要求纳入，否则不处理 Nice to Have 项。
+- **Missing Considerations 视为 Should Fix**：评审指出的遗漏板块必须补充。
+- **不引入新 scope**：修订仅针对评审问题，不借机扩展需求或重构架构（除非评审明确要求）。
+- **版本递增**：修订后的文档版本号 +1（v1→v2→v3...），在 Header 中标注。
+
+### 修订输出额外要求
+- **Header 中必须包含**：
+  - `版本`: vN（递增）
+  - `修订依据`: 评审报告的轮次与来源
+  - `修订摘要`: 3-5 行，列出本次修订的核心变更点
+- **Changelog 段落**（紧跟 Header 之后）：按评审问题逐条列出处理结果：
+  - `RESOLVED` — 已修复，说明修复方式与对应章节
+  - `PARTIALLY RESOLVED` — 部分修复，说明残留缺口与后续计划
+  - `UNRESOLVED` — 未修复（含 `[SKIPPED: Nice to Have]`、`[SKIPPED: 用户指示]`），必须写明原因
+  - 状态映射说明：`[FIXED] -> RESOLVED`；`[SKIPPED: Nice to Have] -> UNRESOLVED`；`[SKIPPED: 用户指示] -> UNRESOLVED`
 
 ## 阻断式澄清（Blocking Questions：Stop-the-line）
 若出现以下任意情况，必须先输出“缺口清单 + 澄清问题（按优先级）”，不要直接产出完整 Execution Spec：
@@ -55,12 +78,22 @@ description: 基于已评审通过的 Intent Spec，生成高精度 Execution Sp
 
 ## 0. Header
 - Related Intent Spec: <link or summary>
+- 版本: v1（修订模式下递增：v2, v3, ...）
+- 修订依据（仅修订模式）: <评审报告轮次与来源>
+- 修订摘要（仅修订模式）: <3-5 行核心变更点>
 - Scope Summary（5-8 行）:
 - Out of Scope（必须列出）:
 - Key Constraints（从 Intent Spec 继承的硬约束）:
 - Facts vs Assumptions（如有）:
   - `FACT`: ...
   - `ASSUMPTION (UNVALIDATED)`: ...
+
+## 0.5 Changelog（仅修订模式，紧跟 Header）
+> 按评审问题逐条列出处理结果。
+
+| # | 评审问题 | 原严重级别 | 处理状态 | 修复说明 / 跳过原因 | 对应章节 |
+|---|---------|-----------|---------|-------------------|---------|
+| 1 | [Issue Title] | Must Fix / Should Fix / Nice to Have | RESOLVED / PARTIALLY RESOLVED / UNRESOLVED | ... | §X.X |
 
 ## 1. 技术路线与架构设计
 ### 1.1 核心组件（Core Components）
