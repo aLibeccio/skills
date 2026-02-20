@@ -13,6 +13,7 @@ plugins/personal-skills/skills/write-execution-spec/SKILL.md
 plugins/personal-skills/skills/review-execution-spec/SKILL.md
 plugins/personal-skills/skills/implement-from-spec/SKILL.md
 plugins/personal-skills/skills/review-code-spec/SKILL.md
+plugins/personal-skills/skills/commit/SKILL.md
 ```
 
 ## Installation
@@ -30,6 +31,7 @@ plugins/personal-skills/skills/review-code-spec/SKILL.md
 - `review-execution-spec`: 以守门人视角防御性审查 Execution Spec，按严重级别输出问题与修复验证建议。
 - `implement-from-spec`: 严格按 Execution Spec 与 Review Feedback 以 TDD 实现功能，并输出可追溯验证证据。
 - `review-code-spec`: 以 Spec-Driven 守门人方式审查代码与 Spec 一致性，拦截 scope creep 与生产风险。
+- `commit`: 自动执行校验、暂存、Conventional Commit 生成、提交与推送，并处理 OTP/2FA 推送提示。
 
 ## Add a Skill
 

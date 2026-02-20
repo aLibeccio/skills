@@ -19,7 +19,8 @@
         "./skills/write-execution-spec",
         "./skills/review-execution-spec",
         "./skills/implement-from-spec",
-        "./skills/review-code-spec"
+        "./skills/review-code-spec",
+        "./skills/commit"
       ]
     }
   ]
